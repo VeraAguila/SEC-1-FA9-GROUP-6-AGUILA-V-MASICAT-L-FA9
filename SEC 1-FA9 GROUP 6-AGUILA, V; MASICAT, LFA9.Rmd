@@ -1,0 +1,295 @@
+---
+title: "FORMATIVE ASSESSMENT 9"
+author:
+  - "Lindsy Rossel C. Masicat"
+  - "Vera Frances A. Aguila"
+date: "2024-11-13"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+library(car)
+library(knitr)
+
+```
+## Abstract
+This study investigated the interaction effect of gender and education level on political interest. Using a two-way ANOVA, assumptions were verified, and a significant interaction effect between gender and education level was detected, leading to an analysis of simple main effects.
+
+## Introduction
+The purpose of this analysis is to explore whether political interest varies by gender and education level and if these factors interact significantly. Understanding these relationships can provide insights into demographic influences on political engagement. The null hypothesis posited no interaction between gender and education level on political interest.
+
+## Method
+Participants: Observations in the dataset represented individuals with different levels of education (School, College, University) and two genders (Male, Female).
+
+Materials and Procedure: Political interest was measured on a continuous scale, ensuring the dependent variable met the required conditions for a two-way ANOVA. Gender and education level served as the independent variables, each with multiple categories.
+
+### Data Table 
+```{r data table, echo=FALSE}
+# Define the data directly
+data <- read.table(text = "
+gender education_level political_interest
+1 1 38
+1 1 39
+1 1 35
+1 1 38
+1 1 41
+1 1 40
+1 1 36
+1 1 37
+1 1 33
+1 2 41.5
+1 2 41.5
+1 2 44.5
+1 2 44.5
+1 2 44
+1 2 46.5
+1 2 42
+1 2 43.5
+1 2 38.5
+1 3 63
+1 3 64
+1 3 61
+1 3 64
+1 3 69
+1 3 69
+1 3 66
+1 3 62
+1 3 63
+1 3 60
+2 1 40
+2 1 41
+2 1 36
+2 1 39
+2 1 44
+2 1 44
+2 1 42
+2 1 38
+2 1 38
+2 1 34
+2 2 45
+2 2 46
+2 2 41
+2 2 44
+2 2 49
+2 2 49
+2 2 47
+2 2 43
+2 2 43
+2 2 39
+2 3 57
+2 3 58
+2 3 63
+2 3 66
+2 3 65
+2 3 61
+2 3 59
+2 3 55
+2 3 45
+2 3 51
+", header = TRUE)
+
+# Display the data as a table
+knitr::kable(data, caption = "Table 1: Gender, Education Level, and Political Interest Data")
+```
+
+## Assumptions
+
+### Assumption 1:
+The dependent variable, Political Interest, is measured at a continuous level. This is satisfied as the values represent a measurable scale of interest in politics.
+
+### Assumption 2:
+The dataset has two independent variables:
+
+- Gender (categorical with two groups: Male, Female).
+- Education Level (categorical with three groups: School, College, University).
+<br>
+Thus, this assumption is met as both independent variables are categorical with sufficient groupings.
+
+### Assumption 3:
+The data ensures independence of observations, meaning each participant’s response is independent of others. This is met as no repeated measures or dependencies are indicated in the dataset.
+
+### Assumption 4:
+The presence of outliers will be checked using boxplots for combinations of Gender and Education Level. Assumption 4 will only hold if no significant outliers are identified.
+
+### Assumption 5:
+The residuals of Political Interest scores must be approximately normally distributed in each group formed by Gender and Education Level. This will be tested using the Shapiro-Wilk test.
+
+### Assumption 6:
+The variance of Political Interest scores should be equal across all groups (homogeneity of variances). This will be tested using Levene’s test for homogeneity.
+
+
+## Assumption Testing
+
+### Descriptive Statistics
+```{r descriptive, echo=FALSE}
+# Group data by gender and education level
+descriptive_stats <- data %>%
+  group_by(gender, education_level) %>%
+  summarise(
+    Mean = mean(political_interest, na.rm = TRUE),
+    SD = sd(political_interest, na.rm = TRUE),
+    N = n(),
+    .groups = 'drop'
+  )
+
+# Display in a table
+kable(descriptive_stats, col.names = c("Gender", "Education Level", "Mean", "SD", "N"), 
+      caption = "Descriptive Statistics by Gender and Education Level")
+```
+
+### Outliers
+```{r outliers, echo=FALSE}
+boxplot(political_interest ~ gender * education_level,
+        data = data,
+        main = "Boxplot of Political Interest",
+        xlab = "Groups (Gender x Education Level)",
+        ylab = "Political Interest")
+```
+
+### Normality
+```{r norm, echo=FALSE}
+# Perform Shapiro-Wilk test for each group
+shapiro_results <- data %>%
+  group_by(gender, education_level) %>%
+  summarise(
+    W = shapiro.test(political_interest)$statistic,
+    p_value = shapiro.test(political_interest)$p.value,
+      .groups = 'drop'
+  )
+
+# Add interpretation of normality
+shapiro_results <- shapiro_results %>%
+  mutate(
+    Normality = ifelse(p_value > 0.05, "Yes", "No")
+  )
+
+# Display results as a table
+kable(shapiro_results, col.names = c("Gender", "Education Level", "W Statistic", "p-value", "Normality"),
+      caption = "Shapiro-Wilk Test Results for Normality by Gender and Education Level")
+
+```
+
+### Homogeneity of Variances
+
+```{r homo, echo=FALSE}
+# Convert Gender and Education_Level to factors
+data <- data %>%
+  mutate(
+    Gender = as.factor(gender),
+    Education_Level = as.factor(education_level)
+  )
+
+# Perform Levene's test
+levene_test <- leveneTest(political_interest ~ Gender * Education_Level, data = data)
+
+
+# Extract results for display
+levene_results <- data.frame(
+  Statistic = levene_test$`F value`[1],
+  p_value = levene_test$`Pr(>F)`[1],
+  Homogeneity = ifelse(levene_test$`Pr(>F)`[1] > 0.05, "Yes", "No")
+)
+
+# Display results as a table
+kable(levene_results, col.names = c("F Statistic", "p-value", "Homogeneity"),
+      caption = "Levene's Test Results for Homogeneity of Variances")
+
+```
+
+- Independence of Observations was ensured by unique participation per observation.
+- Outliers were assessed through a boxplot, showing no extreme values impacting the data (Figure 1).
+- Normality of residuals was evaluated using the Shapiro-Wilk test, revealing normally distributed residuals (p > .05) across groups.
+- Homogeneity of Variance was confirmed using Levene’s test, which indicated equal variances (p = .061)
+
+### Two-Way ANOVA
+```{r anova, echo=FALSE}
+# Ensure Gender and Education_Level are factors for ANOVA
+data <- data %>%
+  mutate(
+    Gender = factor(gender, labels = c("Male", "Female")),
+    Education_Level = factor(education_level, labels = c("School", "College", "University"))
+  )
+
+# Conduct two-way ANOVA
+anova_results <- aov(political_interest ~ Gender * Education_Level, data = data)
+anova_summary <- summary(anova_results)
+
+# Convert ANOVA summary to a data frame for display
+anova_table <- data.frame(
+  Effect = c("Gender", "Education Level", "Gender x Education Level", "Residuals"),
+  Df = c(anova_summary[[1]]$Df[1], anova_summary[[1]]$Df[2], anova_summary[[1]]$Df[3], anova_summary[[1]]$Df[4]),
+  Sum_Sq = c(anova_summary[[1]]$`Sum Sq`[1], anova_summary[[1]]$`Sum Sq`[2], anova_summary[[1]]$`Sum Sq`[3], anova_summary[[1]]$`Sum Sq`[4]),
+  Mean_Sq = c(anova_summary[[1]]$`Mean Sq`[1], anova_summary[[1]]$`Mean Sq`[2], anova_summary[[1]]$`Mean Sq`[3], anova_summary[[1]]$`Mean Sq`[4]),
+  F_value = c(anova_summary[[1]]$`F value`[1], anova_summary[[1]]$`F value`[2], anova_summary[[1]]$`F value`[3], NA),
+  p_value = c(anova_summary[[1]]$`Pr(>F)`[1], anova_summary[[1]]$`Pr(>F)`[2], anova_summary[[1]]$`Pr(>F)`[3], NA)
+)
+
+# Display ANOVA results in table form
+kable(anova_table, col.names = c("Effect", "Df", "Sum of Squares", "Mean Square", "F Value", "p-value"),
+      caption = "Two-Way ANOVA Results for Gender and Education Level on Political Interest")
+
+```
+
+### Post Hoc Analysis 
+```{r posthoc, echo=FALSE}
+# Perform Tukey HSD for pairwise comparisons for Education Level and Gender
+tukey_results <- TukeyHSD(anova_results)
+
+# Convert Tukey results to a data frame for easier display in a table
+tukey_df <- as.data.frame(tukey_results$`Education_Level`)
+tukey_df$Comparison <- rownames(tukey_df)
+rownames(tukey_df) <- NULL
+
+# Reorder columns for a clear presentation
+tukey_df <- tukey_df[, c("Comparison", "diff", "lwr", "upr", "p adj")]
+
+# Display Tukey HSD results in a table
+kable(tukey_df, col.names = c("Comparison", "Difference", "Lower CI", "Upper CI", "Adjusted p-value"),
+      caption = "Tukey HSD Post Hoc Test Results for Education Level")
+
+```
+
+### Visualization
+```{r vis, echo=FALSE}
+# Interaction plot
+interaction.plot(
+  data$Education_Level,
+  data$Gender,
+  data$political_interest,
+  col = c("red", "blue"),
+  lty = 1:2,
+  main = "Interaction Plot of Education Level and Gender on Political Interest",
+  xlab = "Education Level",
+  ylab = "Political Interest",
+  trace.label = "Gender"
+)
+
+```
+
+## Results
+A two-way ANOVA revealed a statistically significant interaction between gender and education level on political interest, $𝐹(2,52)=7.315,\:𝑝=.002, \:𝜂2=.220$
+
+Simple Main Effects Analysis: To interpret this interaction, simple main effects analyses with Bonferroni adjustments were conducted.
+
+- For females:
+
+  - Political Interest scores were significantly higher for university-educated females (58.00 ± 6.46) compared to school-educated $(39.60\: ±\: 3.27)$ and college-educated females $(44.60 \:±\: 3.27)$, with $p < .0005$ in both cases.
+  <br>
+  - The mean difference between school-educated and university-educated females was $18.40\: (95\%\:\: CI, \:14.21 \:to\: 22.60)$, while the difference between college and university levels was $13.40\: (95\% \:CI,\: 9.21\: to\: 17.60)$
+<br>
+- For males:
+  - University-educated males had significantly higher Political Interest scores $(64.10\: ± \:3.07)$ than those with school $(37.44\: ± \:2.51)$ or college education $(42.94 \:± \:2.34)$.
+  <br>
+  - School-educated males had lower Political Interest than both college-educated males,$𝑡(52)=−5.50$, $𝑝=.010$, and university-educated males, $𝑡(52)=−26.66$, $𝑝<.0005$
+
+## Discussion
+The analysis demonstrated that gender and education level significantly influence political interest and interact in determining political engagement. Higher education levels corresponded with greater political interest for both genders, though the effect was more pronounced for females. These results suggest that demographic factors significantly shape political attitudes, with education enhancing political engagement.
+
+## Conclusion
+This study found that both gender and education level affect political interest, with a notable interaction between these variables. This implies that increasing educational opportunities could particularly elevate political engagement among women.
+
